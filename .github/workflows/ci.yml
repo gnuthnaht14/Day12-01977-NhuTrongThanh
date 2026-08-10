@@ -54,4 +54,5 @@ jobs:
             exit 0
           fi
           npx --yes @railway/cli up --ci --yes \
-            --project "$RAILWAY_PROJECT_ID" --service agent
+            --project "$RAILWAY_PROJECT_ID" --environment production \
+            --service agent
