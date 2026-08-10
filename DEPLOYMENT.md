@@ -73,17 +73,50 @@ done; echo
 Dán output của các lệnh trên vào đây:
 
 ```
-GET /health: HTTP 200
-{"status":"ok","service":"day12-agent","version":"1.0.0"}
+PS D:\workSpace\VinAI\K3-Day12-Cloud-Services-And-Deployment-01977-NhuTrongThanh> bash ./run_test_after_deploy.sh
+1. Liveness (expected 200)
+HTTP/2 200 
+content-type: application/json
+date: Mon, 10 Aug 2026 07:06:50 GMT
+server: railway-hikari
+x-railway-request-id: 0_txniOBRzSe2ZImw9P4nw
+content-length: 57
+x-hikari-trace: sin1.98a6
+x-railway-edge: sin1
 
-GET /ready: HTTP 200
-{"status":"ready","redis":true}
+{"status":"ok","service":"day12-agent","version":"1.0.0"}2. Readiness (expected 200)
+HTTP/2 200 
+content-type: application/json
+date: Mon, 10 Aug 2026 07:06:51 GMT
+server: railway-hikari
+x-railway-request-id: kGRfatvDRvyP0uHSALIuDA
+content-length: 31
+x-hikari-trace: sin1.d1nj
+x-railway-edge: sin1
 
-POST /ask without key: HTTP 401
-{"detail":"invalid or missing API key"}
+{"status":"ready","redis":true}3. Missing API key (expected 401)
+HTTP/2 401 
+content-type: application/json
+date: Mon, 10 Aug 2026 07:06:52 GMT
+server: railway-hikari
+x-railway-request-id: 8sscxyqNS8CM_i1Hw9P4nw
+content-length: 39
+x-hikari-trace: sin1.98a6
+x-railway-edge: sin1
 
-POST /ask with key: HTTP 200
-{"answer":"Câu hỏi hay. Hello CP5 thường được giải quyết bằng cách chuẩn hóa môi trường chạy: cùng một image chạy giống nhau ở laptop và trên cloud.","user_id":"sv-cp5","history_length":0,"cost_usd":2.07e-05,"tokens":{"in":2,"out":34}}
+{"detail":"invalid or missing API key"}4. Valid API key (expected 200)
+HTTP/2 200 
+content-type: application/json
+date: Mon, 10 Aug 2026 07:06:53 GMT
+server: railway-hikari
+x-railway-request-id: cty9bHxbRQOnS7mlYqdHTg
+content-length: 340
+x-hikari-trace: sin1.98a6
+x-railway-edge: sin1
+vary: accept-encoding
+
+{"answer":"Câu hỏi hay. Deploy là gì thường được giải quyết bằng cách chuẩn hóa môi trường chạy: cùng một image chạy giống nhau ở laptop và trên cloud. (Mình đang nhớ 20 lượt trao đổi trước đó.)","user_id":"sv-test","history_length":20,"cost_usd":9.345e-05,"tokens":{"in":443,"out":45}}5. Rate limit (last requests expected 429)
+200 200 200 200 200 200 200 200 429 429 429 429 429 429
 ```
 
 ## Ảnh Chụp Màn Hình
