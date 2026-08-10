@@ -1,0 +1,53 @@
+name: CI/CD
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run tests
+        run: >-
+          python -m pytest tests/test_cp1.py tests/test_cp2.py tests/test_cp3.py
+          tests/test_cp4.py --ignore=tests/test_cp5.py -v
+
+  build:
+    name: Build image
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t day12-agent:${{ github.sha }} .
+
+  deploy:
+    name: Deploy to Railway
+    needs: [test, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Deploy
+        run: >-
+          npx --yes @railway/cli up --ci --yes
+          --project "$RAILWAY_PROJECT_ID" --service agent
