@@ -1,26 +1,45 @@
-# 1. Liveness — mong đợi 200 {"status":"ok"}
-curl.exe -i https://agent-production-59a6.up.railway.app/health
+#!/usr/bin/env bash
+set -euo pipefail
 
-# 2. Readiness — mong đợi 200 {"status":"ready"} (đã nối được Redis)
-curl.exe -i https://agent-production-59a6.up.railway.app/ready
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-# 3. Không có API key — mong đợi 401
-curl.exe -i -X POST https://agent-production-59a6.up.railway.app/ask \
+# Load local variables when the script is run from the repository.
+if [[ -f "$SCRIPT_DIR/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  # Strip Windows CR characters while sourcing; keep the secret file unchanged.
+  source <(sed 's/\r$//' "$SCRIPT_DIR/.env")
+  set +a
+fi
+
+: "${AGENT_API_KEY:?AGENT_API_KEY is not set; export it or add it to .env}"
+
+BASE_URL="https://agent-production-59a6.up.railway.app"
+
+echo "1. Liveness (expected 200)"
+curl -sS -i "$BASE_URL/health"
+
+echo "2. Readiness (expected 200)"
+curl -sS -i "$BASE_URL/ready"
+
+echo "3. Missing API key (expected 401)"
+curl -sS -i -X POST "$BASE_URL/ask" \
   -H "Content-Type: application/json" \
   -d '{"question":"Hello"}'
 
-# 4. Có API key — mong đợi 200 kèm câu trả lời
-curl.exe -i -X POST https://agent-production-59a6.up.railway.app/ask \
+echo "4. Valid API key (expected 200)"
+curl -sS -i -X POST "$BASE_URL/ask" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $AGENT_API_KEY" \
   -H "X-User-Id: sv-test" \
   -d '{"question":"Deploy là gì?"}'
 
-# 5. Rate limit — gọi 15 lần, những lần cuối phải trả 429
+echo "5. Rate limit (last requests expected 429)"
 for i in $(seq 1 15); do
-  curl.exe -s -o /dev/null -w "%{http_code} " -X POST https://agent-production-59a6.up.railway.app/ask \
+  curl -sS -o /dev/null -w "%{http_code} " -X POST "$BASE_URL/ask" \
     -H "Content-Type: application/json" \
     -H "X-API-Key: $AGENT_API_KEY" \
     -H "X-User-Id: sv-test" \
     -d '{"question":"test"}'
-done; echo
+done
+echo
