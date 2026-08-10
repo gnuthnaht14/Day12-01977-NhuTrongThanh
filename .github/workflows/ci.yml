@@ -48,6 +48,10 @@ jobs:
         with:
           node-version: "20"
       - name: Deploy
-        run: >-
-          npx --yes @railway/cli up --ci --yes
-          --project "$RAILWAY_PROJECT_ID" --service agent
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ] || [ -z "$RAILWAY_PROJECT_ID" ]; then
+            echo "Railway deploy skipped: configure RAILWAY_TOKEN and RAILWAY_PROJECT_ID in GitHub Secrets."
+            exit 0
+          fi
+          npx --yes @railway/cli up --ci --yes \
+            --project "$RAILWAY_PROJECT_ID" --service agent
